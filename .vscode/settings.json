@@ -1,0 +1,16 @@
+{
+    "python.pythonPath": "/home/laeb/.pyenv/versions/scipy/bin/python",
+    "python.linting.enabled": true,
+    "python.linting.lintOnSave": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 100,
+    "python.linting.pylintEnabled": false,
+    "python.linting.pylintArgs": [
+        "--disable=line-too-long,too-many-lines,missing-docstring,too-few-public-methods",
+        "--load-plugins pylint_django",
+        "--load-plugins pylint_django.checkers.db_performance"
+    ],
+    "python.linting.pep8Args": ["--ignore=E501"],
+    "python.linting.mypyEnabled": true,
+    "python.linting.pep8Enabled": true,
+}

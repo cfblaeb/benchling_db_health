@@ -1,0 +1,45 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Benchling DB health</title>
+    <meta name="description" content="Info about how our benchling db is currently doing">
+    <meta name="author" content="Lasse Ebdrup Pedersen">
+    <link rel="stylesheet" type="text/css" href="{% static "css/index.css" %}">
+</head>
+<body>
+    <div class="row">
+        <div class="chart-frame"><canvas id="total_reg_ents_bar"></canvas></div><!--Total reg ents : bar chart-->
+        <div class="chart-frame"><canvas id="total_eln_ents_bar"></canvas></div><!--Total eln entries : bar chart-->
+        <div class="chart-frame"></div><!--Total reg ents over time: line chart-->
+        <div class="chart-frame"></div><!--Total eln entries over time: line chart-->
+    </div>
+    <div class="row">
+        <div class="chart-frame"></div>
+        <div class="chart-frame"></div>
+        <div class="chart-frame"></div>
+    </div>
+    <div class="row">
+        <div class="chart-frame"></div>
+        <div class="chart-frame"></div>
+        <div class="chart-frame"></div>
+    </div>
+    <div class="row">
+        <div class="chart-frame"></div>
+        <div class="chart-frame"></div>
+        <div class="chart-frame"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes"></script>
+    <script>
+        {% for key, values in context_charts.items %}
+            let {{ key }}_chart = new Chart(document.getElementById("{{ key }}"), {
+                type: "{{ values.kind|safe }}",
+                data: {{ values.data|safe }},
+                options: {{ values.options|safe }}
+            });
+        {% endfor %}
+    </script>
+</body>
+</html>

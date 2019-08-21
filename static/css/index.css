@@ -1,0 +1,12 @@
+.row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.chart-frame {
+    border: solid 1px brown;
+    margin: 5px;
+    flex-grow: 1;
+    min-height: 100px;
+    max-width: 500px;
+}

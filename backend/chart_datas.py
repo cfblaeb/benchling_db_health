@@ -2,8 +2,7 @@ from django.db.models import Count
 from django.core.serializers.json import DjangoJSONEncoder
 from json import dumps
 import pandas as pd
-from backend.models import User, Team, TeamMember, Author, Batch, BatchSchema, RegistryEntity, EntitySchema, Entry, \
-	Schema, Field, FieldDefinition, SchemaField
+from backend.models import User, Team, TeamMember, Author, Batch, BatchSchema, RegistryEntity, EntitySchema, Entry, Schema, Field, FieldDefinition, SchemaField
 
 cled_team = Team.objects.get(name="CHO Cell Line Engineering & Design")
 cled_users = User.objects.filter(id__in=[x.user_id for x in TeamMember.objects.filter(team_id=cled_team.id)])
@@ -103,22 +102,64 @@ def cell_line_health():
 	# 	1 cell lines per person 'Cell Line'= 'ts_PEyIKstK'
 	#	2 designs per person 'Cell Line Design' = 'ts_zMfX4a2T'
 	#	3 batches per person (should be >= than cell lines 'Cell Line Batch' = 'batsch_XbY4s84i'
-	cl_per_person = RegistryEntity.objects.filter(schema_id='ts_PEyIKstK', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))
-	cld_per_person = RegistryEntity.objects.filter(schema_id='ts_zMfX4a2T', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))
-	clb_per_person = Batch.objects.filter(schema_id='batsch_XbY4s84i', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))
+	cl_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_PEyIKstK', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'cl'})
+	cld_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_zMfX4a2T', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'cld'})
+	clb_per_person = pd.DataFrame(Batch.objects.filter(schema_id='batsch_XbY4s84i', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'clb'})
+	df = pd.concat([cl_per_person, cld_per_person, clb_per_person], axis=1, sort=True).fillna(0)
+
 	data = dumps(
 		{
-			'labels': labels,
-			'datasets': [{
-				'label': '# eln entries',
-				'data': data,
-				'borderWidth': 3
-			}]})
+			'labels': list(df.index.map({x.id: x.name for x in cled_users})),
+			'datasets': [
+				{
+					'label': 'cell line',
+					'data': df['cl'].to_list(),
+					'borderWidth': 3
+				},
+				{
+					'label': 'cell line design',
+					'data': df['cld'].to_list(),
+					'borderWidth': 3
+				},
+				{
+					'label': 'cell line batch',
+					'data': df['clb'].to_list(),
+					'borderWidth': 3
+				},
+			]}, cls=DjangoJSONEncoder)
+	options = dumps({'scales': {'yAxes': [{'ticks': {'max': 200, 'beginAtZero': True}}]}}, cls=DjangoJSONEncoder)
+	return {'kind': 'bar', 'data': data, 'options': options}
 
 
-def very_last():
+def plasmid_health():
 	# 3 datasets about plasmids
-	# 	1 plasmids per person
-	#	2 batches per person
-	#	3 glycerol stock per person
-	pass
+	# 	1 plasmids per person  'Plasmid' 'ts_tF400h5Z'
+	#		2 batches per person	'Plasmid Batch'  'batsch_bkooLwF9'
+	#		3 glycerol stock per person	 , Strain'  'ts_ldSnOj6A'
+	pl_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_tF400h5Z', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'pl'})
+	plb_per_person = pd.DataFrame(Batch.objects.filter(schema_id='batsch_bkooLwF9', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'plb'})
+	str_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_ldSnOj6A', creator_id__in=cled_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'strain'})
+	df = pd.concat([pl_per_person, plb_per_person, str_per_person], axis=1, sort=True).fillna(0)
+
+	data = dumps(
+		{
+			'labels': list(df.index.map({x.id: x.name for x in cled_users})),
+			'datasets': [
+				{
+					'label': 'Plasmid',
+					'data': df['pl'].to_list(),
+					'borderWidth': 3
+				},
+				{
+					'label': 'Plasmid Batch',
+					'data': df['plb'].to_list(),
+					'borderWidth': 3
+				},
+				{
+					'label': 'Glycerol stock',
+					'data': df['strain'].to_list(),
+					'borderWidth': 3
+				},
+			]}, cls=DjangoJSONEncoder)
+	options = dumps({'scales': {'yAxes': [{'ticks': {'max': 50, 'beginAtZero': True}}]}}, cls=DjangoJSONEncoder)
+	return {'kind': 'bar', 'data': data, 'options': options}

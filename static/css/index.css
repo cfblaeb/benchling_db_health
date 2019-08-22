@@ -1,12 +1,18 @@
 .row {
     display: flex;
-    flex-wrap: wrap;
+    overflow: hidden;
+    /*flex-wrap: wrap;*/
 }
 
 .chart-frame {
+    overflow: hidden;
     border: solid 1px brown;
     margin: 5px;
-    flex-grow: 1;
-    min-height: 100px;
-    max-width: 500px;
+    flex: 1;
+    position: relative;
+    transition: flex-grow 1s;
+}
+
+.chart-frame:hover {
+    flex-grow: 2;
 }

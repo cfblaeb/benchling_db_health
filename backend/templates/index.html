@@ -10,25 +10,16 @@
 </head>
 <body>
     <div class="row">
-        <div class="chart-frame"><canvas id="total_reg_ents_bar"></canvas></div><!--Total reg ents : bar chart-->
-        <div class="chart-frame"><canvas id="total_eln_ents_bar"></canvas></div><!--Total eln entries : bar chart-->
-        <div class="chart-frame"><canvas id="reg_ents_per_user_line"></canvas></div><!--Total reg ents over time: line chart-->
-        <div class="chart-frame"></div><!--Total eln entries over time: line chart-->
+        <div class="chart-frame"><canvas id="total_reg_ents_bar"></canvas></div>
+        <div class="chart-frame"><canvas id="reg_ents_per_user_line"></canvas></div>
     </div>
     <div class="row">
-        <div class="chart-frame"></div>
-        <div class="chart-frame"></div>
-        <div class="chart-frame"></div>
+        <div class="chart-frame"><canvas id="total_eln_ents_bar"></canvas></div>
+        <div class="chart-frame"><canvas id="eln_mods_per_user_line"></canvas></div>
     </div>
     <div class="row">
-        <div class="chart-frame"></div>
-        <div class="chart-frame"></div>
-        <div class="chart-frame"></div>
-    </div>
-    <div class="row">
-        <div class="chart-frame"></div>
-        <div class="chart-frame"></div>
-        <div class="chart-frame"></div>
+        <div class="chart-frame"><canvas id="what"></canvas></div><!--Total eln entries : bar chart-->
+        <div class="chart-frame"><canvas id="about"></canvas></div><!--Total eln entries over time: line chart-->
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.bundle.min.js" integrity="sha256-xKeoJ50pzbUGkpQxDYHD7o7hxe0LaOGeguUidbq6vis=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes"></script>
@@ -37,8 +28,9 @@
 
     <script>
         //Chart.plugins.register(ChartRough);
-        //Chart.defaults.global.plugins.rough.roughness = 3;
-        //Chart.defaults.global.plugins.rough.bowing = 3;
+        //Chart.defaults.global.plugins.rough.roughness = 2;
+        //Chart.defaults.global.plugins.rough.bowing = 2;
+        Chart.defaults.global.aspectRatio = false;
         {% for key, values in context_charts.items %}
             let {{ key }}_chart = new Chart(document.getElementById("{{ key }}"), {
                 type: "{{ values.kind|safe }}",

@@ -5,18 +5,16 @@ import pandas as pd
 from backend.models import User, Team, TeamMember, Author, Batch, RegistryEntity, Entry, Schema
 
 
-def get_team(team_name):
+def get_team_users(team_name):
 	team_object = Team.objects.get(name=team_name)
 	team_users = User.objects.filter(id__in=[x.user_id for x in TeamMember.objects.filter(team_id=team_object.id)])
-	team_user_ids = [x.id for x in team_users]
 	return team_users
 
 
 def total_reg_ents_bar(team_name):
-	team_users = get_team(team_name)
+	team_users = get_team_users(team_name)
 	team_user_ids = [x.id for x in team_users]
-	reo_counts = RegistryEntity.objects.filter(creator_id__in=team_user_ids).values("schema_id").annotate(
-		Count('schema_id')).order_by('schema_id__count')
+	reo_counts = RegistryEntity.objects.filter(creator_id__in=team_user_ids).values("schema_id").annotate(Count('schema_id')).order_by('schema_id__count')
 	labels = [Schema.objects.get(id=x['schema_id']).name for x in reo_counts]
 	data = [x['schema_id__count'] for x in reo_counts]
 	data = dumps(
@@ -32,7 +30,7 @@ def total_reg_ents_bar(team_name):
 
 
 def total_eln_ents_bar(team_name):
-	team_users = get_team(team_name)
+	team_users = get_team_users(team_name)
 	team_user_ids = [x.id for x in team_users]
 	entries = Author.objects.filter(user_id__in=team_user_ids).values("user_id").annotate(Count('user_id')).order_by('user_id__count')
 	labels = [User.objects.get(id=x['user_id']).name for x in entries]
@@ -50,7 +48,7 @@ def total_eln_ents_bar(team_name):
 
 
 def reg_ents_per_user_line(team_name):
-	team_users = get_team(team_name)
+	team_users = get_team_users(team_name)
 	team_user_ids = [x.id for x in team_users]
 	reos = RegistryEntity.objects.filter(creator_id__in=team_user_ids).values('created_at', 'schema_id')
 	df = pd.DataFrame(reos)
@@ -79,8 +77,32 @@ def reg_ents_per_user_line(team_name):
 	return {'kind': 'line', 'data': data, 'options': options}
 
 
+def reg_ents_per_user_bar(team_name):
+	team_users = get_team_users(team_name)
+	team_user_ids = [x.id for x in team_users]
+	df = pd.DataFrame(RegistryEntity.objects.filter(creator_id__in=team_user_ids).values("creator_id", "schema_id")).pivot_table(index='schema_id', columns='creator_id', aggfunc=len).fillna(0)
+	data = dumps(
+		{
+			'labels': [Schema.objects.get(id=x).name for x in df.index],
+			'datasets': [
+				{
+					'label': team_users.get(id=user_id).name,
+					'data': df[user_id].to_list(),
+					'borderWidth': 3,
+					'hidden': True
+				} for user_id in df.columns
+			]}, cls=DjangoJSONEncoder)
+	options = dumps({'scales': {'yAxes': [{'ticks': {'max': 200, 'beginAtZero': True}}]}}, cls=DjangoJSONEncoder)
+	return {'kind': 'bar', 'data': data, 'options': options}
+
+
 def eln_mods_per_user_line(team_name):
-	team_users = get_team(team_name)
+	"""
+	This one is not used anymore because I thought it showed everytime a user has made a modification, but I now realize it only shows the last mod date of an entry
+	:param team_name:
+	:return:
+	"""
+	team_users = get_team_users(team_name)
 	datasets = []
 	for cled_user in team_users:
 		entry_id_list = Author.objects.filter(user_id=cled_user.id).values("entry_id")
@@ -117,7 +139,7 @@ def cell_line_health(team_name):
 	:return:
 	"""
 
-	team_users = get_team(team_name)
+	team_users = get_team_users(team_name)
 	team_user_ids = [x.id for x in team_users]
 	cl_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_PEyIKstK', creator_id__in=team_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'cl'})
 	cld_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_zMfX4a2T', creator_id__in=team_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'cld'})
@@ -158,7 +180,7 @@ def plasmid_health(team_name):
 	:return:
 	"""
 
-	team_users = get_team(team_name)
+	team_users = get_team_users(team_name)
 	team_user_ids = [x.id for x in team_users]
 	pl_per_person = pd.DataFrame(RegistryEntity.objects.filter(schema_id='ts_tF400h5Z', creator_id__in=team_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'pl'})
 	plb_per_person = pd.DataFrame(Batch.objects.filter(schema_id='batsch_bkooLwF9', creator_id__in=team_user_ids).values('creator_id').annotate(Count('creator_id'))).set_index('creator_id').rename(columns={'creator_id__count': 'plb'})
